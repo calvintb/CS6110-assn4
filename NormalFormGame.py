@@ -80,16 +80,6 @@ def is_weakly_dominated(payoff_matrix, eliminated, action: int, is_row: bool) ->
         return is_col_dominated(payoff_matrix, eliminated, action, False)
 
 
-def eliminate(payoff_matrix, strategies: list[chr], total_row_actions):
-    for strategy in strategies:
-        is_row, action_index = get_action_index(strategy, total_row_actions)
-        if is_row:
-            del payoff_matrix[action_index]
-        else:
-            for i in range(len(payoff_matrix)):
-                del payoff_matrix[i][action_index]
-
-
 class NormalFormGame:
     """
     A class to represent a Normal Form game in the context of game theory
@@ -182,8 +172,7 @@ class NormalFormGame:
             eliminated += strategies
             strategies = self.find_strongly_dominated_strategies(payoff_matrix, eliminated)
 
-    def print_pure_strategy_equilibria(self):
-        print("Pure Strategy Equilibria: ", end='')
+    def find_nash_equilibria(self):
         payoff_matrix = deepcopy(self.payoffs)
         nash_equilibria = []
         num_actions_player1 = len(payoff_matrix)
@@ -204,16 +193,19 @@ class NormalFormGame:
 
                 if not player1_better and not player2_better:
                     nash_equilibria.append(get_action_name(action1, True, len(payoff_matrix)) + get_action_name(action2, False, len(payoff_matrix[0])))
-        print(", ".join(map(str, nash_equilibria)))
         return nash_equilibria
 
-    def print_minimax_strategy(self):
-        print("Minimax Strategy:")
+    def print_pure_strategy_equilibria(self):
+        print("Pure Strategy Equilibria: ", end='')
+        nash_equilibria = self.find_nash_equilibria()
+        print(", ".join(map(str, nash_equilibria)))
+
+    def find_minimax_strategy(self):
         payoff_matrix = deepcopy(self.payoffs)
         num_actions_player1 = len(payoff_matrix)
         num_actions_player2 = len(payoff_matrix[0])
         minimum_regret = None
-        best_action = []
+        best_action_p1 = []
         for action1 in range(num_actions_player1):
             regret_of_action = float('-inf')
             for action2 in range(num_actions_player2):
@@ -226,13 +218,12 @@ class NormalFormGame:
             # Determine the maximum of the minimum payoffs
             if minimum_regret is None or regret_of_action < minimum_regret:
                 minimum_regret = regret_of_action
-                best_action = [get_action_name(action1, True)]
+                best_action_p1 = [get_action_name(action1, True)]
             elif regret_of_action == minimum_regret:
-                best_action.append(get_action_name(action1, True))
-        print("\tRow Player: Choose " + " or ".join(map(str, best_action)))
+                best_action_p1.append(get_action_name(action1, True))
 
         minimum_regret = None
-        best_action = []
+        best_action_p2 = []
         for action2 in range(num_actions_player2):
             regret_of_action = float('-inf')
             for action1 in range(num_actions_player1):
@@ -245,10 +236,16 @@ class NormalFormGame:
             # Determine the maximum of the minimum payoffs
             if minimum_regret is None or regret_of_action < minimum_regret:
                 minimum_regret = regret_of_action
-                best_action = [get_action_name(action2, False, num_actions_player2)]
+                best_action_p2 = [get_action_name(action2, False, num_actions_player2)]
             elif regret_of_action == minimum_regret:
-                best_action.append(get_action_name(action2, False, num_actions_player2))
-        print("\tColumn Player: Choose " + " or ".join(map(str, best_action)))
+                best_action_p2.append(get_action_name(action2, False, num_actions_player2))
+        return best_action_p1, best_action_p2
+
+    def print_minimax_strategy(self):
+        print("Minimax Strategy:")
+        player1, player2 = self.find_minimax_strategy()
+        print("\tRow Player: Choose " + " or ".join(map(str, player1)))
+        print("\tColumn Player: Choose " + " or ".join(map(str, player2)))
 
     def print_maximin_strategy(self):
         print("Maximin Strategy:")
@@ -309,7 +306,8 @@ class NormalFormGame:
             output += "\n"
         print(output)
 
-    def report(self):
+    def report(self, title):
+        print(format(title, "-^70s"))
         self.print_table()
         self.print_strongly_dominated_solutions()
         self.print_weakly_dominated_solutions()
