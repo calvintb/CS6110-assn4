@@ -1,26 +1,35 @@
 import unittest
-from NormalFormGame import NormalFormGame
+from NormalFormGame import NormalFormGame, parse_payoff
+
+
+class TestParsePayoff(unittest.TestCase):
+
+    def test_parse_payoff(self):
+        normal_form = """2 4
+4 4 -1 -1 0 3 0 3
+3 3 -1 -1 0 4 0 4"""
+
+        expected_output = [
+            [(4, 3), (4, 3), (-1, -1), (-1, -1)],
+            [(0, 0), (3, 4), (0, 0), (3, 4)]
+        ]
+
+        result = parse_payoff(normal_form)
+        self.assertEqual(result, expected_output)
 
 
 class TestNormalFormGame(unittest.TestCase):
-
     def setUp(self):
-        payoffs = {
-            ('A', 'X'): 3,
-            ('A', 'Y'): 2,
-            ('B', 'X'): 1,
-            ('B', 'Y'): 4,
-        }
-        self.game = NormalFormGame(payoffs)
+        payoff_matrix = [
+            [(4, 3), (4, 3), (-1, -1), (-1, -1)],
+            [(0, 0), (3, 4), (0, 0), (3, 4)]
+        ]
+        self.normalFormGame = NormalFormGame(payoff_matrix)
 
-    def test_pareto_optimal(self):
-        self.assertTrue(self.game.is_pareto_optimal('A', 'X'))
-        self.assertFalse(self.game.is_pareto_optimal('B', 'X'))
-        self.assertTrue(self.game.is_pareto_optimal('B', 'Y'))
-
-    def test_dominant_strategy(self):
-        self.assertTrue(self.game.is_dominant_strategy(('A', 'X')))
-        self.assertFalse(self.game.is_dominant_strategy(('B', 'Y')))
+    def test_find_pareto_optimal(self):
+        expected_optimal_solutions = [('A', 'W'), ('A', 'X'), ('B', 'X'), ('B', 'Z')]
+        result = self.normalFormGame.find_pareto_optimal()
+        self.assertEqual(result, expected_optimal_solutions)
 
 
 if __name__ == '__main__':
